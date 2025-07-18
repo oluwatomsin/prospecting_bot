@@ -1,0 +1,44 @@
+lead_profile:
+  geography: USA
+
+  avoid_roles:
+    - Regional Sales
+    - Territory Sales
+    - Area Sales
+    - District Sales
+    - General Manager
+    - Product Marketing
+    - Regional Marketing
+    - Sales Operations
+    - Contract
+    - Contractual
+    - Contractor
+
+  tiers:
+    tier_1:
+      description: Head of Company
+      target_titles:
+        - CEO
+        - President
+        - Founder
+        - Managing Director
+    tier_2:
+      description: Head of Sales
+      target_titles:
+        - Chief Commercial Officer (CCO)
+        - Head of Sales
+        - Vice President of Sales
+        - Sales Manager
+        - Director of Sales
+    tier_3:
+      description: Head of Marketing
+      target_titles:
+        - Chief Marketing Officer (CMO)
+        - Head of Marketing
+        - VP of Marketing
+        - Marketing Director
+
+  sourcing_guidelines:
+    - First, check the company’s leadership or management page on their website.
+    - Prioritize identifying the highest-ranking individuals in Sales, Marketing, and overall company leadership.
+    - If individuals are not listed or the page doesn’t exist, perform a web or LinkedIn search to locate them.
