@@ -19,7 +19,7 @@ for key in [
 # Upload CSV
 if data := st.file_uploader("Kindly Upload your csv file containing the Job post and company info", type=['csv']):
     st.write("File uploaded successfully")
-    df = pd.read_csv(data, nrows=6).copy(deep=True)
+    df = pd.read_csv(data).copy(deep=True)
     st.session_state.data_df = df
     st.data_editor(df)
 
@@ -199,12 +199,11 @@ if "qualified_companies_df" in st.session_state:
 
             try:
                 leads = get_company_leads(company_name)
-                leads_results.append(leads)
+                leads_results.append(json.dumps(leads, ensure_ascii=False))
             except Exception as e:
                 st.warning(f"❌ Failed to generate leads for {company_name}: {e}")
                 leads_results.append("[]")  # Empty JSON array fallback
 
-            time.sleep(1.5)  # Avoid hitting rate limits
 
         updated_df["leads"] = leads_results
         st.session_state.leads_df = updated_df

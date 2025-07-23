@@ -1,59 +1,27 @@
-import yaml
 from rich import print
+from langchain_tavily import TavilySearch
+from langgraph.prebuilt import create_react_agent
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.prompts import PromptTemplate
-from langchain.output_parsers import PydanticOutputParser
-import json
 from dotenv import load_dotenv
-from langchain.tools import tool
-from langchain.agents import initialize_agent, AgentType
-from ddgs import DDGS
 import json
+import re
 
 
 load_dotenv()
-
 model_name = "gemini-2.5-flash-preview-05-20"
 temperature = 0.1
 
 llm = ChatGoogleGenerativeAI(model=model_name, temperature=temperature, max_retries=2)
 
 
-@tool
-def get_company_links(company: str) -> dict:
-    """Returns the website and LinkedIn URL of a given company using DuckDuckGo"""
-    website = None
-    linkedin = None
-
-    with DDGS() as ddgs:
-        query = f"{company} site:linkedin.com OR site:{company}.com"
-        results = ddgs.text(query, max_results=15)
-
-        for result in results:
-            url = result.get("href", "").lower()
-            if not linkedin and "linkedin.com/company" in url:
-                linkedin = url
-            elif not website and company.lower() in url and not "linkedin" in url:
-                website = url
-
-            if website and linkedin:
-                break
-
-    return {
-        "company": company,
-        "website": website,
-        "linkedin": linkedin
-    }
-
-
-# Create the agent
-agent = initialize_agent(
-    tools=[get_company_links],
-    llm=llm,
-    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-    verbose=True,
-    handle_parsing_errors=True
+# Initialize Tavily Search Tool
+tavily_search_tool = TavilySearch(
+    max_results=5,
+    topic="general",
 )
+
+agent = create_react_agent(llm, [tavily_search_tool])
+
 
 
 def get_company_info(company_name: str) -> dict:
@@ -62,34 +30,43 @@ def get_company_info(company_name: str) -> dict:
     :param company_name: Name of the company to search for.
     :return: Dictionary containing the website and LinkedIn URL.
     """
-    response = agent.invoke(f"Find the official LinkedIn and website for {company_name}. Return only the URLs in JSON format.")
+    prompt = f"""
+    Search the web and get me the official linkedIn url and website url for company: {company_name}. You response should be 
+    in this format: \n\n 
+    
+    {{
+          "company": "{company_name}",
+          "linkedin": "<LinkedIn URL or 'N/A>",
+          "website": "<Website Url or 'N/A'>"
+        }}
+    
+    """
 
-    # Extract the output string
-    output = response.get("output") if isinstance(response, dict) else response
-
-    # Remove code block markers if present
-    if isinstance(output, str):
-        content = output.strip()
-        if content.startswith("```json"):
-            content = content[7:]
-        if content.startswith("```"):
-            content = content[3:]
-        if content.endswith("```"):
-            content = content[:-3]
-        content = content.strip()
-    else:
-        content = output
+    # The agent is a graph, and we need to invoke it with the input
+    inputs = {"messages": [("user", prompt)]}
+    response = agent.invoke(inputs)
 
     try:
-        data = json.loads(content)
-        # If the result is nested (company_name as key), extract the inner dict
-        if isinstance(data, dict) and company_name in data:
-            return data[company_name]
-        # If the result is already the desired dict
-        if isinstance(data, dict) and "website" in data and "linkedin" in data:
-            return data
-        # Fallback: return empty
-        return {"website": None, "linkedin": None}
-    except Exception as e:
-        print(f"Error decoding JSON response: {e}")
-        return {"website": None, "linkedin": None}
+        raw_output = response.get("messages", [])[-1].content
+
+        # Use regex to extract the JSON string from within the markdown code block
+        match = re.search(r"```json\n(.*)\n```", raw_output, re.DOTALL)
+        if match:
+            json_string = match.group(1)
+            return json.loads(json_string)
+        else:
+            # Fallback if no markdown block is found (less common for models instructed to use it)
+            return json.loads(raw_output)
+
+    except (IndexError, json.JSONDecodeError, AttributeError) as e:
+        print(f"Error processing agent response: {e}")
+        print(f"Raw agent response: {response}")
+        return []
+
+
+# Example Usage:
+if __name__ == "__main__":
+    company = "Superbo"
+    leads = get_company_info(company)
+    print(json.dumps(leads, indent=2))
+

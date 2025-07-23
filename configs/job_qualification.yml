@@ -223,6 +223,9 @@ prompt_v2:
       - if sdr_keywords_but_full_cycle_closing: label_as_ae_strategy
       - if fails_core_criteria: label_as_disqualified_with_reason
 
+    Exceptions:
+      - if the job post does not have a salary indicate, the criteria for checking acceptable salary range should not apply, meaning the salary is approved in this case.
+
 
     about_salaria:
       - Human/AI Cold Calling: One-to-one, no robodialers
