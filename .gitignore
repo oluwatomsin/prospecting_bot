@@ -13,3 +13,4 @@ data/
 
 # Secrets
 .env
+.streamlit/secrets.toml

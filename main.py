@@ -7,8 +7,38 @@ from modules.company_info_extractor import get_company_info
 from modules.lead_info_extractor import get_company_leads
 
 
-st.markdown("## Lead Classification Bot")
+# --- 🔐 Load credentials from secrets.toml ---
+USERS = st.secrets["users"]
 
+# --- Initialize login state ---
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
+# --- Login logic ---
+def login(username, password):
+    if username in USERS and password == USERS[username]:
+        st.session_state.logged_in = True
+        st.rerun()
+    else:
+        st.error("❌ Invalid username or password")
+
+# --- Login Form ---
+if not st.session_state.logged_in:
+    st.title("🔐 Login Required")
+    with st.form("login_form"):
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+        if st.form_submit_button("Login"):
+            login(username, password)
+    st.stop()
+
+# --- Logout ---
+if st.button("Logout"):
+    st.session_state.logged_in = False
+    st.rerun()
+
+# ✅ --- Your Original App Starts Below ---
+st.markdown("## Lead Classification Bot")
 # Initialize all session states independently
 for key in [
     "data_df", "classified_df", "filtered_df", "enriched_df", "edited_enriched_df", "final_classified_df"
