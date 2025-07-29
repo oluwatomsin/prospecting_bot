@@ -5,7 +5,7 @@ import json
 from modules.jd_qualifier import job_classifier_function
 from modules.company_info_extractor import get_company_info
 from modules.lead_info_extractor import get_company_leads
-import time
+
 
 st.markdown("## Lead Classification Bot")
 
